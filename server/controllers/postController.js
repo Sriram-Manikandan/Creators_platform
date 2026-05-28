@@ -48,12 +48,18 @@ export const getPosts = async (req, res, next) => {
     // We only fetch the posts created by the logged-in user
     const query = { author: req.user._id };
 
-    const posts = await Post.find(query)
-      .sort({ createdAt: -1 }) // Newest first
-      .skip(skip)
-      .limit(limit);
+    // Run the data query and count query in PARALLEL (faster than sequential)
+    const [posts, totalPosts] = await Promise.all([
+      Post.find(query)
+        .populate('author', 'name email')  // Fixes N+1: one query instead of N
+        .sort({ createdAt: -1 })           // Uses compound index: author+createdAt
+        .skip(skip)
+        .limit(limit)
+        .select('title content coverImage createdAt author') // Return only needed fields
+        .lean(),                           // Plain JS objects — skips Mongoose hydration
+      Post.countDocuments(query)
+    ]);
 
-    const totalPosts = await Post.countDocuments(query);
     const totalPages = Math.ceil(totalPosts / limit);
 
     res.status(200).json({
@@ -74,7 +80,9 @@ export const getPosts = async (req, res, next) => {
 // ─── Get Single Post by ID ───────────────────────────────────────────────
 export const getPostById = async (req, res, next) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.id)
+      .populate('author', 'name email') // Populate author details
+      .lean();                          // Read-only — no need for Mongoose Document
 
     if (!post) {
       res.status(404);
@@ -82,7 +90,7 @@ export const getPostById = async (req, res, next) => {
     }
 
     // Ownership check (optional for viewing, but required here per specs)
-    if (post.author.toString() !== req.user._id.toString()) {
+    if (post.author._id.toString() !== req.user._id.toString()) {
       res.status(403);
       return next(new Error('User not authorized to access this post'));
     }
