@@ -3,7 +3,7 @@ import Post from '../models/Post.js';
 // ─── Create Post ─────────────────────────────────────────────────────────
 export const createPost = async (req, res, next) => {
   try {
-    const { title, content } = req.body;
+    const { title, content, coverImage } = req.body;
 
     if (!title || !content) {
       res.status(400);
@@ -13,6 +13,7 @@ export const createPost = async (req, res, next) => {
     const post = await Post.create({
       title,
       content,
+      coverImage,
       author: req.user._id, // User ID attached by the auth middleware
     });
 

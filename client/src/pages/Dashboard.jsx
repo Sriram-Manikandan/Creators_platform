@@ -218,6 +218,14 @@ export default function Dashboard() {
                         </div>
                       </div>
                       
+                      {post.coverImage && (
+                        <img 
+                          src={post.coverImage} 
+                          alt={`Cover image for ${post.title}`} 
+                          style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '1rem' }}
+                        />
+                      )}
+                      
                       <p className="post-content">{post.content}</p>
 
                       <div className="post-actions">
