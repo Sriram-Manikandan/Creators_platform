@@ -7,6 +7,7 @@ import Home      from './pages/Home';
 import Login     from './pages/Login';
 import Register  from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import CreatePost from './pages/CreatePost';
 
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
@@ -35,6 +36,11 @@ function AppLayout() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/create-post" element={
+          <ProtectedRoute>
+            <CreatePost />
           </ProtectedRoute>
         } />
 
