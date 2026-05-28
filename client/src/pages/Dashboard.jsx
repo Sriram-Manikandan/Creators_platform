@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { toast } from 'react-toastify';
+import socket from '../services/socket';
 
 export default function Dashboard() {
   const { user, token, logout } = useAuth();
@@ -33,6 +34,34 @@ export default function Dashboard() {
   useEffect(() => {
     fetchPosts(page);
   }, [page]);
+
+  useEffect(() => {
+    // Connect when component mounts (user is logged in)
+    socket.connect();
+
+    // Listen for successful connection
+    socket.on('connect', () => {
+      console.log('🔌 Socket connected:', socket.id);
+    });
+
+    // Listen for disconnection
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Socket disconnected:', reason);
+    });
+
+    // Listen for connection errors
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+    });
+
+    // Cleanup when component unmounts
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.disconnect();
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
