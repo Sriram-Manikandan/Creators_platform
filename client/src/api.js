@@ -3,9 +3,9 @@ import axios from 'axios';
 // 1. Create Axios instance
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
-  headers: {
-    'Content-Type': 'application/json'
-  },
+  // NOTE: Do NOT set Content-Type globally.
+  // For JSON requests, axios sets it automatically.
+  // For FormData (file uploads), the browser must set it with the multipart boundary.
   timeout: 10000 // 10 seconds timeout
 });
 

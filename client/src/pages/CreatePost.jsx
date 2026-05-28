@@ -2,14 +2,37 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { toast } from 'react-toastify';
+import ImageUpload from '../components/ImageUpload';
 
 export default function CreatePost() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ title: '', content: '' });
   const [loading, setLoading] = useState(false);
+  
+  // Image Upload State
+  const [coverImageUrl, setCoverImageUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleUpload = async (uploadFormData) => {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      // NOTE: Axios automatically sets the multipart/form-data boundary
+      const res = await api.post('/api/upload', uploadFormData);
+      setCoverImageUrl(res.data.url);
+      toast.success('Image uploaded successfully!');
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Failed to upload image';
+      setUploadError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -21,7 +44,11 @@ export default function CreatePost() {
 
     setLoading(true);
     try {
-      await api.post('/api/posts', formData);
+      const postData = {
+        ...formData,
+        coverImage: coverImageUrl,
+      };
+      await api.post('/api/posts', postData);
       toast.success('Post created successfully!');
       navigate('/dashboard');
     } catch (err) {
@@ -97,6 +124,15 @@ export default function CreatePost() {
               />
             </div>
 
+            <div className="field">
+              <label>Cover Image (Optional)</label>
+              {/* Orphaned upload problem: If user uploads an image, then uploads a different one, the first remains on Cloudinary */}
+              <ImageUpload onUpload={handleUpload} />
+              {uploading && <div style={{ marginTop: '0.5rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '8px' }}><div className="spinner" style={{ width: '12px', height: '12px', borderColor: 'rgba(129,140,248,0.2)', borderTopColor: '#818cf8' }} /> Uploading image...</div>}
+              {uploadError && <div className="error-msg" style={{ marginTop: '0.5rem' }}>{uploadError}</div>}
+              {coverImageUrl && !uploading && <div style={{ marginTop: '0.5rem', color: '#22c55e' }}>Image successfully attached to post!</div>}
+            </div>
+
             <div className="btn-group">
               <button 
                 type="button" 
@@ -109,7 +145,7 @@ export default function CreatePost() {
               <button 
                 type="submit" 
                 className="btn btn-primary"
-                disabled={loading}
+                disabled={loading || uploading}
               >
                 {loading ? <><div className="spinner" />Publishing...</> : 'Publish Post'}
               </button>
