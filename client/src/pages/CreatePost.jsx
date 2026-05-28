@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { toast } from 'react-toastify';
+import ImageUpload from '../components/ImageUpload';
 
 export default function CreatePost() {
   const navigate = useNavigate();
@@ -10,6 +11,11 @@ export default function CreatePost() {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleUpload = (formData) => {
+    console.log('File from FormData:', formData.get('image'));
+    toast.info('Check the console to see the File object!');
   };
 
   const handleSubmit = async (e) => {
@@ -95,6 +101,11 @@ export default function CreatePost() {
                 onChange={handleChange}
                 placeholder="Write your post content here..."
               />
+            </div>
+
+            <div className="field">
+              <label>Cover Image (Optional)</label>
+              <ImageUpload onUpload={handleUpload} />
             </div>
 
             <div className="btn-group">
