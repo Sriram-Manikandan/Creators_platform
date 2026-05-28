@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from '../api';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -73,30 +74,23 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("/api/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.toLowerCase(),
-          password: formData.password,
-          // confirmPassword is NOT sent to the backend
-        }),
+      const res = await api.post("/api/users/register", {
+        name: formData.name.trim(),
+        email: formData.email.toLowerCase(),
+        password: formData.password,
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setSuccessMessage(
-          "Account created successfully! Redirecting to login..."
-        );
-        setFormData({ name: "", email: "", password: "", confirmPassword: "" });
-        setTimeout(() => navigate("/login"), 2000);
+      setSuccessMessage(
+        "Account created successfully! Redirecting to login..."
+      );
+      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        setApiError(err.response.data.message);
       } else {
-        setApiError(data.message || "Registration failed. Please try again.");
+        setApiError("Unable to connect to server. Please try again later.");
       }
-    } catch {
-      setApiError("Unable to connect to server. Please try again later.");
     } finally {
       setIsLoading(false);
     }

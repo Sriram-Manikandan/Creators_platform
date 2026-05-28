@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import api from '../../api';
 
 function ConnectionTest() {
     const [status, setStatus] = useState('');
@@ -9,10 +10,9 @@ function ConnectionTest() {
         setLoading(true);
         setStatus('');
         try {
-            const res = await fetch('/api/health');  // ← Relative URL (proxy!)
-            const data = await res.json();
+            const res = await api.get('/api/health');  // ← Relative URL (proxy!)
             setIsSuccess(true);
-            setStatus(`✅ Connected! Server says: "${data.message}"`);
+            setStatus(`✅ Connected! Server says: "${res.data.message}"`);
         } catch (_err) {
             setIsSuccess(false);
             setStatus('❌ Failed to connect. Is the backend running?');
