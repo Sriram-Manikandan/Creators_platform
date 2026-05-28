@@ -57,3 +57,83 @@ export const getPosts = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// ─── Get Single Post by ID ───────────────────────────────────────────────
+export const getPostById = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Ownership check (optional for viewing, but required here per specs)
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'User not authorized to access this post' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: post,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── Update Post ─────────────────────────────────────────────────────────
+export const updatePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Ownership check: only the author can update their post
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'User not authorized to update this post' });
+    }
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.id,
+      {
+        title: req.body.title || post.title,
+        content: req.body.content || post.content,
+      },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: updatedPost,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── Delete Post ─────────────────────────────────────────────────────────
+export const deletePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Ownership check: only the author can delete their post
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'User not authorized to delete this post' });
+    }
+
+    await post.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Post deleted successfully',
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
