@@ -4,6 +4,7 @@ import cors from 'cors';
 import connectDB from './config/database.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import uploadRoutes from './routes/upload.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -65,6 +66,7 @@ app.use(express.json());
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes(io));
+app.use('/api/upload', uploadRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ 
