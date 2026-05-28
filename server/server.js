@@ -6,6 +6,7 @@ import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import uploadRoutes from './routes/upload.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
+import timingMiddleware from './middleware/timing.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
@@ -62,6 +63,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(timingMiddleware); // Log response times for all routes
 
 // Routes
 app.use('/api/users', userRoutes);
