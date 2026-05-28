@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 
 import Header    from './components/layout/Header';
 import Footer    from './components/layout/Footer';
@@ -8,26 +8,8 @@ import Login     from './pages/Login';
 import Register  from './pages/Register';
 import Dashboard from './pages/Dashboard';
 
-// ─── Protected Route wrapper ──────────────────────────────────────────────
-// Redirects to /login if user is not authenticated
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    // Still restoring session from localStorage — don't redirect yet
-    return (
-      <div style={{
-        minHeight: '100vh', background: '#0a0a0a',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#6366f1', fontFamily: 'sans-serif', fontSize: '0.95rem',
-      }}>
-        Restoring session...
-      </div>
-    );
-  }
-
-  return isAuthenticated() ? children : <Navigate to="/login" replace />;
-}
+import ProtectedRoute from './components/common/ProtectedRoute';
+import PublicRoute from './components/common/PublicRoute';
 
 // ─── App Layout (inside Router so Header can use useNavigate) ─────────────
 function AppLayout() {
@@ -36,8 +18,18 @@ function AppLayout() {
       <Header />
       <Routes>
         <Route path="/"         element={<Home />} />
-        <Route path="/login"    element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        
+        {/* Public: only accessible when logged out */}
+        <Route path="/login"    element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        } />
+        <Route path="/register" element={
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        } />
 
         {/* Protected: only accessible when logged in */}
         <Route path="/dashboard" element={
