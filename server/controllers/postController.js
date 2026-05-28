@@ -16,6 +16,17 @@ export const createPost = async (req, res, next) => {
       author: req.user._id, // User ID attached by the auth middleware
     });
 
+    if (req.io) {
+      req.io.emit('newPost', {
+        message: `New post created by ${req.user.name}`,
+        post: {
+          _id: post._id,
+          title: post.title,
+          createdBy: req.user.name
+        }
+      });
+    }
+
     res.status(201).json({
       success: true,
       data: post,

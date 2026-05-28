@@ -7,6 +7,8 @@ import postRoutes from './routes/postRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import User from './models/User.js';
 
 dotenv.config();      // ← Must be FIRST
 connectDB();
@@ -23,8 +25,29 @@ const io = new Server(httpServer, {
   }
 });
 
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    return next(new Error('Authentication error: No token provided'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Fetch user to get email for logging if it's not in the token
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return next(new Error('Authentication error: User not found'));
+    }
+    socket.data.user = user;
+    next();
+  } catch (err) {
+    return next(new Error('Authentication error'));
+  }
+});
+
 io.on('connection', (socket) => {
-  console.log(`✅ User connected: ${socket.id}`);
+  console.log(`✅ User connected: ${socket.id} | User: ${socket.data.user.email}`);
 
   socket.on('disconnect', (reason) => {
     console.log(`❌ User disconnected: ${socket.id} (${reason})`);
@@ -41,7 +64,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/users', userRoutes);
-app.use('/api/posts', postRoutes);
+app.use('/api/posts', postRoutes(io));
 
 app.get('/api/health', (req, res) => {
     res.json({ 
