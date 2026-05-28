@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { toast } from 'react-toastify';
 
 export default function Dashboard() {
   const { user, token, logout } = useAuth();
@@ -9,7 +10,6 @@ export default function Dashboard() {
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -18,14 +18,13 @@ export default function Dashboard() {
 
   const fetchPosts = async (currentPage) => {
     setLoading(true);
-    setError('');
     try {
       const res = await api.get(`/api/posts?page=${currentPage}&limit=5`);
       setPosts(res.data.data);
       setTotalPages(res.data.meta.totalPages);
       setTotalPosts(res.data.meta.totalPosts);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch posts');
+      toast.error(err.response?.data?.message || 'Failed to fetch posts');
     } finally {
       setLoading(false);
     }
@@ -38,6 +37,22 @@ export default function Dashboard() {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleDelete = async (postId) => {
+    if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      // Optimistic UI update
+      setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+      setTotalPosts((prev) => prev - 1);
+      try {
+        await api.delete(`/api/posts/${postId}`);
+        toast.success('Post deleted successfully!');
+      } catch (err) {
+        // Roll back on failure
+        toast.error(err.response?.data?.message || 'Failed to delete post. Please try again.');
+        fetchPosts(page);
+      }
+    }
   };
 
   const joinedDate = new Date(user.createdAt).toLocaleDateString('en-US', {
@@ -75,12 +90,20 @@ export default function Dashboard() {
         .section-title { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: #f8fafc; margin-bottom: 1.5rem; }
         
         .post-list { display: flex; flex-direction: column; gap: 1rem; }
-        .post-item { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 1.5rem; transition: transform 0.2s, border-color 0.2s; }
+        .post-item { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 1.5rem; transition: transform 0.2s, border-color 0.2s; display: flex; flex-direction: column; }
         .post-item:hover { border-color: #374151; transform: translateY(-2px); }
-        .post-title { font-size: 1.2rem; font-weight: 600; color: #e2e8f0; margin-bottom: 8px; }
+        .post-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+        .post-title { font-size: 1.2rem; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
         .post-date { font-size: 0.8rem; color: #64748b; margin-bottom: 12px; }
-        .post-content { color: #94a3b8; font-size: 0.95rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .post-content { color: #94a3b8; font-size: 0.95rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1rem; }
         
+        .post-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: auto; border-top: 1px dashed #1f2937; padding-top: 1rem; }
+        .action-btn { background: transparent; border: 1px solid #374151; padding: 6px 12px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .action-btn.edit { color: #818cf8; }
+        .action-btn.edit:hover { background: rgba(129,140,248,0.1); border-color: #818cf8; }
+        .action-btn.delete { color: #f87171; }
+        .action-btn.delete:hover { background: rgba(248,113,113,0.1); border-color: #f87171; }
+
         .empty-state { text-align: center; padding: 3rem; background: #111827; border: 1px dashed #374151; border-radius: 12px; color: #64748b; }
         
         .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; }
@@ -139,8 +162,6 @@ export default function Dashboard() {
           <div className="content-section">
             <h2 className="section-title">Your Content</h2>
             
-            {error && <div className="error-msg">⚠️ {error}</div>}
-
             {loading ? (
               <div className="spinner-wrapper"><div className="spinner"></div></div>
             ) : posts.length > 0 ? (
@@ -148,13 +169,33 @@ export default function Dashboard() {
                 <div className="post-list">
                   {posts.map((post) => (
                     <div className="post-item" key={post._id}>
-                      <h3 className="post-title">{post.title}</h3>
-                      <div className="post-date">
-                        {new Date(post.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                        })}
+                      <div className="post-header-row">
+                        <div>
+                          <h3 className="post-title">{post.title}</h3>
+                          <div className="post-date">
+                            {new Date(post.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
                       </div>
+                      
                       <p className="post-content">{post.content}</p>
+
+                      <div className="post-actions">
+                        <button 
+                          className="action-btn edit"
+                          onClick={() => navigate(`/edit-post/${post._id}`)}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button 
+                          className="action-btn delete"
+                          onClick={() => handleDelete(post._id)}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

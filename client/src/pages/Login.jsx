@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';  // ← context, not localStorage directly
+import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import { toast } from 'react-toastify';
 
 export default function Login() {
   const navigate  = useNavigate();
-  const { login } = useAuth();   // ← login() from context handles everything
+  const { login } = useAuth();
 
   const [formData, setFormData]         = useState({ email: '', password: '' });
   const [errors, setErrors]             = useState({});
   const [isLoading, setIsLoading]       = useState(false);
-  const [apiError, setApiError]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -32,7 +32,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setApiError('');
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -42,14 +41,14 @@ export default function Login() {
         password: formData.password,
       });
 
-      // ✅ ONE line — context handles state + localStorage. No direct localStorage here!
       login(res.data.data, res.data.token);
+      toast.success('Welcome back!');
       navigate('/dashboard');
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
-        setApiError(err.response.data.message);
+        toast.error(err.response.data.message);
       } else {
-        setApiError('Unable to connect to server. Please try again.');
+        toast.error('Unable to connect to server. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -100,8 +99,6 @@ export default function Login() {
               <h2>Welcome back</h2>
               <p>Don&apos;t have an account? <Link to="/register">Create one here</Link></p>
             </div>
-
-            {apiError && <div className="msg-banner error">⚠️ {apiError}</div>}
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="field">

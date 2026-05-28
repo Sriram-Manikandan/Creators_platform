@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import Header    from './components/layout/Header';
 import Footer    from './components/layout/Footer';
@@ -8,6 +10,7 @@ import Login     from './pages/Login';
 import Register  from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreatePost from './pages/CreatePost';
+import EditPost from './pages/EditPost';
 
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
@@ -16,6 +19,7 @@ import PublicRoute from './components/common/PublicRoute';
 function AppLayout() {
   return (
     <>
+      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
       <Header />
       <Routes>
         <Route path="/"         element={<Home />} />
@@ -41,6 +45,11 @@ function AppLayout() {
         <Route path="/create-post" element={
           <ProtectedRoute>
             <CreatePost />
+          </ProtectedRoute>
+        } />
+        <Route path="/edit-post/:id" element={
+          <ProtectedRoute>
+            <EditPost />
           </ProtectedRoute>
         } />
 

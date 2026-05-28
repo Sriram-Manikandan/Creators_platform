@@ -12,16 +12,20 @@ const generateToken = (userId) => {
 };
 
 // ─── Register ─────────────────────────────────────────────────────────────
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password)
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!name || !email || !password) {
+      res.status(400);
+      return next(new Error('All fields are required'));
+    }
 
     const exists = await User.findOne({ email });
-    if (exists)
-      return res.status(400).json({ message: 'User with this email already exists' });
+    if (exists) {
+      res.status(400);
+      return next(new Error('User with this email already exists'));
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hashedPassword });
@@ -34,28 +38,34 @@ export const registerUser = async (req, res) => {
       data: user,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Login ────────────────────────────────────────────────────────────────
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     // 1. Check all fields exist
-    if (!email || !password)
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!email || !password) {
+      res.status(400);
+      return next(new Error('Email and password are required'));
+    }
 
     // 2. Find user — explicitly select password (select:false hides it by default)
     const user = await User.findOne({ email }).select('+password');
-    if (!user)
-      return res.status(401).json({ message: 'Invalid email or password' });
+    if (!user) {
+      res.status(401);
+      return next(new Error('Invalid email or password'));
+    }
 
     // 3. Compare plain password vs hashed password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(401).json({ message: 'Invalid email or password' });
+    if (!isMatch) {
+      res.status(401);
+      return next(new Error('Invalid email or password'));
+    }
 
     // 4. Generate JWT
     const token = generateToken(user._id);
@@ -76,52 +86,61 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Get All Users ────────────────────────────────────────────────────────
-export const getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find();
-    res.status(200).json(users);
+    res.status(200).json({ success: true, data: users });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Get Single User ──────────────────────────────────────────────────────
-export const getUserById = async (req, res) => {
+export const getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.status(200).json(user);
+    if (!user) {
+      res.status(404);
+      return next(new Error('User not found'));
+    }
+    res.status(200).json({ success: true, data: user });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Update User ──────────────────────────────────────────────────────────
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.status(200).json(user);
+    if (!user) {
+      res.status(404);
+      return next(new Error('User not found'));
+    }
+    res.status(200).json({ success: true, data: user });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Delete User ──────────────────────────────────────────────────────────
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res, next) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.status(200).json({ message: 'User deleted successfully' });
+    if (!user) {
+      res.status(404);
+      return next(new Error('User not found'));
+    }
+    res.status(200).json({ success: true, message: 'User deleted successfully' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };

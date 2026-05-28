@@ -1,31 +1,31 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { toast } from 'react-toastify';
 
 export default function CreatePost() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ title: '', content: '' });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim()) {
-      setError('Title and content are required');
+      toast.error('Title and content are required');
       return;
     }
 
     setLoading(true);
     try {
       await api.post('/api/posts', formData);
+      toast.success('Post created successfully!');
       navigate('/dashboard');
     } catch (err) {
-      setError(
+      toast.error(
         err.response?.data?.message || 'Failed to create post. Please try again.'
       );
     } finally {
@@ -72,8 +72,6 @@ export default function CreatePost() {
             <h1>Create New Post</h1>
             <p>Share your ideas with the world.</p>
           </div>
-
-          {error && <div className="msg-banner error">⚠️ {error}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="field">
