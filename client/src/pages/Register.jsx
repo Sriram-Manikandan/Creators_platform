@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from '../api';
+import { toast } from 'react-toastify';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -14,8 +15,6 @@ export default function Register() {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -66,30 +65,25 @@ export default function Register() {
   // ─── Form Submission ───────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setApiError("");
-    setSuccessMessage("");
-
     if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
-      const res = await api.post("/api/users/register", {
+      await api.post("/api/users/register", {
         name: formData.name.trim(),
         email: formData.email.toLowerCase(),
         password: formData.password,
       });
 
-      setSuccessMessage(
-        "Account created successfully! Redirecting to login..."
-      );
+      toast.success('Account created successfully! Redirecting to login...');
       setFormData({ name: "", email: "", password: "", confirmPassword: "" });
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
-        setApiError(err.response.data.message);
+        toast.error(err.response.data.message);
       } else {
-        setApiError("Unable to connect to server. Please try again later.");
+        toast.error('Unable to connect to server. Please try again later.');
       }
     } finally {
       setIsLoading(false);

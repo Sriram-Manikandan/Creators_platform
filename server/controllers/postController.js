@@ -1,12 +1,13 @@
 import Post from '../models/Post.js';
 
 // ─── Create Post ─────────────────────────────────────────────────────────
-export const createPost = async (req, res) => {
+export const createPost = async (req, res, next) => {
   try {
     const { title, content } = req.body;
 
     if (!title || !content) {
-      return res.status(400).json({ message: 'Title and content are required' });
+      res.status(400);
+      return next(new Error('Title and content are required'));
     }
 
     const post = await Post.create({
@@ -20,12 +21,12 @@ export const createPost = async (req, res) => {
       data: post,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Get Posts with Pagination ───────────────────────────────────────────
-export const getPosts = async (req, res) => {
+export const getPosts = async (req, res, next) => {
   try {
     // Default to page 1, limit 5 if not provided
     const page = parseInt(req.query.page, 10) || 1;
@@ -54,22 +55,24 @@ export const getPosts = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Get Single Post by ID ───────────────────────────────────────────────
-export const getPostById = async (req, res) => {
+export const getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      res.status(404);
+      return next(new Error('Post not found'));
     }
 
     // Ownership check (optional for viewing, but required here per specs)
     if (post.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'User not authorized to access this post' });
+      res.status(403);
+      return next(new Error('User not authorized to access this post'));
     }
 
     res.status(200).json({
@@ -77,22 +80,24 @@ export const getPostById = async (req, res) => {
       data: post,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Update Post ─────────────────────────────────────────────────────────
-export const updatePost = async (req, res) => {
+export const updatePost = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      res.status(404);
+      return next(new Error('Post not found'));
     }
 
     // Ownership check: only the author can update their post
     if (post.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'User not authorized to update this post' });
+      res.status(403);
+      return next(new Error('User not authorized to update this post'));
     }
 
     const updatedPost = await Post.findByIdAndUpdate(
@@ -109,22 +114,24 @@ export const updatePost = async (req, res) => {
       data: updatedPost,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // ─── Delete Post ─────────────────────────────────────────────────────────
-export const deletePost = async (req, res) => {
+export const deletePost = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      res.status(404);
+      return next(new Error('Post not found'));
     }
 
     // Ownership check: only the author can delete their post
     if (post.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'User not authorized to delete this post' });
+      res.status(403);
+      return next(new Error('User not authorized to delete this post'));
     }
 
     await post.deleteOne();
@@ -134,6 +141,6 @@ export const deletePost = async (req, res) => {
       message: 'Post deleted successfully',
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };

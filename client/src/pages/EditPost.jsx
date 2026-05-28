@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api';
+import { toast } from 'react-toastify';
 
 export default function EditPost() {
   const navigate = useNavigate();
@@ -9,7 +10,6 @@ export default function EditPost() {
   const [formData, setFormData] = useState({ title: '', content: '' });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -20,7 +20,7 @@ export default function EditPost() {
           content: res.data.data.content,
         });
       } catch (err) {
-        setError(
+        toast.error(
           err.response?.data?.message || 'Failed to load post. It may not exist or you do not have permission.'
         );
       } finally {
@@ -33,22 +33,22 @@ export default function EditPost() {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim()) {
-      setError('Title and content are required');
+      toast.error('Title and content are required');
       return;
     }
 
     setSubmitting(true);
     try {
       await api.put(`/api/posts/${id}`, formData);
+      toast.success('Post updated successfully!');
       navigate('/dashboard');
     } catch (err) {
-      setError(
+      toast.error(
         err.response?.data?.message || 'Failed to update post. Please try again.'
       );
     } finally {
@@ -98,8 +98,6 @@ export default function EditPost() {
             <h1>Edit Post</h1>
             <p>Make changes to your published content.</p>
           </div>
-
-          {error && <div className="msg-banner error">⚠️ {error}</div>}
 
           {loading ? (
              <div className="loading-container">

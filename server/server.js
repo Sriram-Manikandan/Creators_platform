@@ -4,6 +4,7 @@ import cors from 'cors';
 import connectDB from './config/database.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import { errorHandler } from './middleware/errorMiddleware.js';
 
 dotenv.config();      // ← Must be FIRST
 connectDB();
@@ -30,6 +31,9 @@ app.get('/api/health', (req, res) => {
         status: 'OK'
     });
 });
+
+// Error handling middleware MUST be defined after all routes
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { toast } from 'react-toastify';
 
 export default function Dashboard() {
   const { user, token, logout } = useAuth();
@@ -9,7 +10,6 @@ export default function Dashboard() {
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -18,14 +18,13 @@ export default function Dashboard() {
 
   const fetchPosts = async (currentPage) => {
     setLoading(true);
-    setError('');
     try {
       const res = await api.get(`/api/posts?page=${currentPage}&limit=5`);
       setPosts(res.data.data);
       setTotalPages(res.data.meta.totalPages);
       setTotalPosts(res.data.meta.totalPosts);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch posts');
+      toast.error(err.response?.data?.message || 'Failed to fetch posts');
     } finally {
       setLoading(false);
     }
@@ -42,15 +41,15 @@ export default function Dashboard() {
 
   const handleDelete = async (postId) => {
     if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      // Optimistic UI update
+      setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+      setTotalPosts((prev) => prev - 1);
       try {
-        // Optimistic UI update
-        setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
-        setTotalPosts((prev) => prev - 1);
-        
         await api.delete(`/api/posts/${postId}`);
+        toast.success('Post deleted successfully!');
       } catch (err) {
-        // If it fails, we should ideally fetch posts again or show an error
-        setError('Failed to delete post. Please refresh and try again.');
+        // Roll back on failure
+        toast.error(err.response?.data?.message || 'Failed to delete post. Please try again.');
         fetchPosts(page);
       }
     }
@@ -163,8 +162,6 @@ export default function Dashboard() {
           <div className="content-section">
             <h2 className="section-title">Your Content</h2>
             
-            {error && <div className="error-msg">⚠️ {error}</div>}
-
             {loading ? (
               <div className="spinner-wrapper"><div className="spinner"></div></div>
             ) : posts.length > 0 ? (
