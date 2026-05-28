@@ -12,13 +12,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - '5000:5000'
-    environment:
-      MONGODB_URI: ${MONGODB_URI}
-      CLIENT_URL: ${CLIENT_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    env_file:
+      - ./server/.env.docker
     depends_on:
       - mongo
 
