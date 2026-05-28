@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { toast } from 'react-toastify';
+import hotToast from 'react-hot-toast';
 import socket from '../services/socket';
 
 export default function Dashboard() {
@@ -36,6 +37,8 @@ export default function Dashboard() {
   }, [page]);
 
   useEffect(() => {
+    // Ensure we update token on every connect if it changed
+    socket.auth = { token: localStorage.getItem('token') };
     // Connect when component mounts (user is logged in)
     socket.connect();
 
@@ -54,11 +57,17 @@ export default function Dashboard() {
       console.error('Socket connection error:', error.message);
     });
 
+    // Listen for new posts
+    socket.on('newPost', (data) => {
+      hotToast.success(data.message);
+    });
+
     // Cleanup when component unmounts
     return () => {
       socket.off('connect');
       socket.off('disconnect');
       socket.off('connect_error');
+      socket.off('newPost');
       socket.disconnect();
     };
   }, []);

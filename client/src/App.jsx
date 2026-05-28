@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Toaster } from 'react-hot-toast';
 
 import Header    from './components/layout/Header';
 import Footer    from './components/layout/Footer';
@@ -19,6 +20,7 @@ import PublicRoute from './components/common/PublicRoute';
 function AppLayout() {
   return (
     <>
+      <Toaster position="top-right" />
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
       <Header />
       <Routes>
