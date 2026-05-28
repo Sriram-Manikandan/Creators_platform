@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';  // ← context, not localStorage directly
+import api from '../api';
 
 export default function Login() {
   const navigate  = useNavigate();
@@ -36,25 +37,20 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      const res = await fetch('/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email.toLowerCase(),
-          password: formData.password,
-        }),
+      const res = await api.post('/api/users/login', {
+        email: formData.email.toLowerCase(),
+        password: formData.password,
       });
-      const data = await res.json();
 
-      if (res.ok) {
-        // ✅ ONE line — context handles state + localStorage. No direct localStorage here!
-        login(data.data, data.token);
-        navigate('/dashboard');
+      // ✅ ONE line — context handles state + localStorage. No direct localStorage here!
+      login(res.data.data, res.data.token);
+      navigate('/dashboard');
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        setApiError(err.response.data.message);
       } else {
-        setApiError(data.message || 'Login failed. Please try again.');
+        setApiError('Unable to connect to server. Please try again.');
       }
-    } catch {
-      setApiError('Unable to connect to server. Please try again.');
     } finally {
       setIsLoading(false);
     }
